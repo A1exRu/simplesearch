@@ -1,0 +1,13 @@
+{
+  "query": "abc",
+  "documents": [
+    {
+      "body": "A",
+      "rank": 2
+    },
+    {
+      "body": "B",
+      "rank": 1
+    }
+  ]
+}
