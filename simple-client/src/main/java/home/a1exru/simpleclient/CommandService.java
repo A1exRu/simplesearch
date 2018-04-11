@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -15,7 +14,6 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Component
 public class CommandService implements CommandLineRunner {
 
     @Value("${api.search}")
@@ -28,6 +26,7 @@ public class CommandService implements CommandLineRunner {
     {
         handlers.put("help", this::help);
         handlers.put("put", this::put);
+        handlers.put("search", this::search);
         handlers.put("get", this::get);
         handlers.put("exit", this::exit);
     }
@@ -50,22 +49,36 @@ public class CommandService implements CommandLineRunner {
     }
 
     private void help(String arg) {
-        System.out.println("Available commands: help, put <text>, search <query>, exit");
+        System.out.println("Available commands: help, put <key> <text>, search <query>, exit");
     }
 
     private void error(String arg) {
-        System.out.printf("Command with name %s in not available", arg);
+        System.out.println("Unknown command");
     }
 
     private void put(String text) {
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.postForLocation(searchUrl, new PutCommand(text));
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.matches() && matcher.group(2) != null) {
+            RestTemplate restTemplate = new RestTemplate();
+            restTemplate.postForLocation(searchUrl, new PutCommand(matcher.group(1), matcher.group(2)));
+        } else {
+            System.out.println("Required param missing: put <key> <text>");
+        }
     }
 
-    private void get(String query) {
+    private void search(String query) {
         RestTemplate restTemplate = new RestTemplate();
         Response response = restTemplate.getForObject(searchUrl + "?query=" + query, Response.class);
-        response.documents.stream().map(Document::getBody).forEach(System.out::println);
+        if (response.getDocuments() != null) {
+            response.documents.stream().map(Document::getBody).forEach(System.out::println);
+        }
+    }
+
+    private void get(String key) {
+        RestTemplate restTemplate = new RestTemplate();
+        Document response = restTemplate.getForObject(searchUrl + "/" + key, Document.class);
+        System.out.println(response.getBody());
+
     }
 
     private void exit(String arg) {
@@ -75,6 +88,7 @@ public class CommandService implements CommandLineRunner {
     @Data
     @AllArgsConstructor
     public static class PutCommand {
+        private String key;
         private String text;
     }
 

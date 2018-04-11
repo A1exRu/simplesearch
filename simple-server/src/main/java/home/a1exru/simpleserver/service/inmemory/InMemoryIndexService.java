@@ -18,10 +18,11 @@ import java.util.stream.Stream;
 @Service
 public class InMemoryIndexService implements IndexService {
 
+    private final Map<String, String> documents = new HashMap<>();
     private final Map<String, Set<String>> index = new HashMap<>();
 
     @Override
-    public List<Document> get(String query) {
+    public List<Document> search(String query) {
         String[] tokens = query.split("\\s");
         Map<String, Long> rank = Stream.of(tokens).filter(t -> t.length() > 0)
                 .map(t -> t.replaceAll("\\W", ""))
@@ -36,7 +37,9 @@ public class InMemoryIndexService implements IndexService {
     }
 
     @Override
-    public void put(String document) {
+    public void put(String key, String document) {
+        documents.put(key, document);
+
         String[] tokens = document.split("\\s");
         Stream.of(tokens).filter(t -> t.length() > 0)
                 .map(t -> t.replaceAll("\\W", ""))
@@ -47,4 +50,9 @@ public class InMemoryIndexService implements IndexService {
         });
     }
 
+    @Override
+    public Document get(String key) {
+        String document = documents.get(key);
+        return new Document(document, 0L);
+    }
 }

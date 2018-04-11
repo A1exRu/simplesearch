@@ -53,14 +53,24 @@ public class IndexControllerTest {
     }
 
     @Test
-    public void get() throws Exception {
+    public void search() throws Exception {
         List<Document> documents = Arrays.asList(new Document("A", 2L), new Document("B", 1L));
-        given(indexService.get("abc")).willReturn(documents);
+        given(indexService.search("abc")).willReturn(documents);
 
         Map result = this.restTemplate.getForObject("/search?query=abc", Map.class);
         Assertions.assertThat(jsonTester.write(result)).isEqualToJson("/search/search_response.json");
 
-        verify(indexService).get("abc");
+        verify(indexService).search("abc");
+    }
+
+    @Test
+    public void get() throws Exception {
+        given(indexService.get("test_key")).willReturn(new Document("Test_body", 0L));
+
+        Map result = this.restTemplate.getForObject("/search/test_key", Map.class);
+        Assertions.assertThat(jsonTester.write(result)).isEqualToJson("/search/get_response.json");
+
+        verify(indexService).get("test_key");
     }
 
     @Test
@@ -68,8 +78,8 @@ public class IndexControllerTest {
         String jsonPath = "/search/put_request.json";
         HttpEntity<String> entity = getEntityFromJson(jsonPath);
 
-        this.restTemplate.postForObject("/filtering-persist", entity, Object.class);
-        verify(indexService).put("Abc");
+        this.restTemplate.postForObject("/search", entity, Object.class);
+        verify(indexService).put("test_key", "Abc");
     }
 
     private HttpEntity<String> getEntityFromJson(String jsonPath) throws URISyntaxException, IOException {
